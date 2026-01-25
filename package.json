@@ -1,0 +1,66 @@
+{
+  "name": "@pockit/ai-core",
+  "version": "0.0.1",
+  "description": "Embed tiny intelligence in any app - Lightweight React library for running AI models in the browser via WebLLM. Perfect for intelligent NPCs in games.",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "watch": "tsc --watch",
+    "dev": "concurrently \"npm run watch\" \"cd docs && npm run dev\"",
+    "build": "tsc",
+    "release": "npm run build && npm publish --access public"
+  },
+  "keywords": [
+    "ai",
+    "tiny-intelligence",
+    "llm",
+    "webllm",
+    "react",
+    "browser",
+    "webgpu",
+    "machine-learning",
+    "inference",
+    "local-ai",
+    "embed",
+    "privacy",
+    "offline",
+    "lightweight",
+    "npc",
+    "game",
+    "game-ai",
+    "intelligent-npc",
+    "dialogue"
+  ],
+  "author": "prnth",
+  "license": "MIT",
+  "type": "module",
+  "workspaces": [
+    "docs"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pocketgamecorp/pockit-ai-core.git"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/node": "^22.10.5",
+    "@types/react": "^19.2.6",
+    "@types/react-dom": "^19.2.3",
+    "concurrently": "^9.2.1",
+    "jest": "^30.2.0",
+    "puppeteer": "^24.36.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "ts-jest": "^29.4.6",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1"
+  },
+  "dependencies": {
+    "@mlc-ai/web-llm": "^0.2.80"
+  }
+}
