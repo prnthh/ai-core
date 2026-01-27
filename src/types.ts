@@ -1,6 +1,7 @@
 export interface ChatMessage {
-  role: 'system' | 'user' | 'assistant';
+  role: 'system' | 'user' | 'assistant' | 'tool';
   content: string;
+  tool_call_id?: string;
 }
 
 export interface GenerateOptions {
@@ -10,6 +11,38 @@ export interface GenerateOptions {
   onFinish?: (fullText: string) => void;
   onError?: (error: string) => void;
 }
+
+// Function Calling Types
+export interface FunctionParameter {
+  type: string;
+  description?: string;
+  enum?: string[];
+  items?: FunctionParameter;
+  properties?: Record<string, FunctionParameter>;
+  required?: string[];
+}
+
+export interface FunctionDefinition {
+  name: string;
+  description: string;
+  parameters: {
+    type: 'object';
+    properties: Record<string, FunctionParameter>;
+    required?: string[];
+  };
+}
+
+export interface ToolDefinition {
+  type: 'function';
+  function: FunctionDefinition;
+}
+
+export interface FunctionCall {
+  name: string;
+  parameters: Record<string, any>;
+}
+
+export type FunctionImplementation = (params: Record<string, any>) => any | Promise<any>;
 
 export interface WebLLMOptions {
   modelId?: string;

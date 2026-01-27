@@ -17,3 +17,12 @@ export type {
 // Vanilla JS API
 export { AICore } from './PockitAI';
 export type { AICoreOptions, GenerateOptions as AICoreGenerateOptions } from './PockitAI';
+
+// Function Calling Types
+export type {
+  FunctionParameter,
+  FunctionDefinition,
+  ToolDefinition,
+  FunctionCall,
+  FunctionImplementation
+} from './types';

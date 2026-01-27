@@ -119,6 +119,79 @@ await ai.generate('What is AI?');
 - `getHistory()` / `setHistory()` - Manage conversation
 - `unload()` - Free resources
 
+**Function Calling Methods:**
+- `registerTool(name, implementation)` - Register a function the LLM can call
+- `unregisterTool(name)` - Remove a registered tool
+- `executeTool(name, params)` - Execute a registered tool
+- `buildSystemPromptWithTools(basePrompt, tools)` - Generate system prompt with tool definitions (Llama 3.1 format)
+- `parseFunctionCall(response)` - Extract function calls from LLM responses
+- `generateWithTools(messages, options)` - Automatic function calling loop
+
+## Function Calling
+
+AICore includes built-in utilities for function calling, supporting Llama 3.1 and Hermes formats:
+
+```typescript
+import { AICore, type ToolDefinition } from '@pockit/ai-core';
+
+const ai = new AICore();
+
+// 1. Define tools
+const tools: ToolDefinition[] = [{
+  type: 'function',
+  function: {
+    name: 'get_weather',
+    description: 'Get weather for a location',
+    parameters: {
+      type: 'object',
+      properties: {
+        location: { type: 'string', description: 'City name' }
+      },
+      required: ['location']
+    }
+  }
+}];
+
+// 2. Register implementation
+ai.registerTool('get_weather', (params) => {
+  return `Weather in ${params.location}: Sunny, 72°F`;
+});
+
+// 3. Build system prompt with tools
+const systemPrompt = ai.buildSystemPromptWithTools(
+  "You are a helpful assistant.",
+  tools
+);
+
+// 4. Use automatic function calling
+await ai.initialize();
+const response = await ai.generateWithTools([
+  { role: 'system', content: systemPrompt },
+  { role: 'user', content: 'What\'s the weather in Paris?' }
+], {
+  onToolCall: (name, params) => console.log('Calling:', name, params),
+  onToolResult: (name, result) => console.log('Result:', result)
+});
+// Response: "The weather in Paris is sunny and 72°F."
+```
+
+### Manual Function Calling
+
+For more control, use the parsing utilities:
+
+```typescript
+const response = await ai.generate(messages);
+const functionCall = ai.parseFunctionCall(response);
+
+if (functionCall) {
+  const result = await ai.executeTool(
+    functionCall.name,
+    functionCall.parameters
+  );
+  // Add result to conversation and continue...
+}
+```
+
 ## Examples
 
 ```typescript
