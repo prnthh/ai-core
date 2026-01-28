@@ -137,17 +137,55 @@ Do not add any other text when calling a function.`;
 
     // Parse function calls from LLM response
     const parseFunctionCall = (response: string): FunctionCall | null => {
-        const match = response.match(/<function>(.*?)<\/function>/);
-        if (match) {
+        const trimmed = response.trim();
+
+        // 1. Full <function>...</function>
+        const fullMatch = trimmed.match(/<function>([\s\S]*?)<\/function>/);
+        if (fullMatch) {
+            return safeParseFunctionJSON(fullMatch[1]);
+        }
+
+        // 2. Starts with <function> but never closed
+        if (trimmed.startsWith("<function>")) {
+            const json = trimmed.slice("<function>".length).trim();
+            return safeParseFunctionJSON(json);
+        }
+
+        // 3. Raw JSON blob
+        if (trimmed.startsWith("{")) {
             try {
-                return JSON.parse(match[1]);
-            } catch (e) {
-                console.error('Failed to parse function call:', e);
-                return null;
+                const parsed = JSON.parse(trimmed);
+
+                if (
+                    parsed?.type === "function" &&
+                    parsed?.parameters?.character &&
+                    parsed?.parameters?.location
+                ) {
+                    return {
+                        name: "move_character",
+                        parameters: parsed.parameters
+                    };
+                }
+            } catch { }
+        }
+
+        return null;
+    };
+
+    const safeParseFunctionJSON = (json: string): FunctionCall | null => {
+        try {
+            const parsed = JSON.parse(json);
+
+            if (parsed?.name && parsed?.parameters) {
+                return parsed;
             }
+        } catch (err) {
+            console.warn("Function JSON parse failed:", json);
         }
         return null;
     };
+
+
 
     // Execute the move_character function
     const executeMoveCharacter = (characterName: string, locationName: string): string => {
@@ -195,8 +233,8 @@ Do not add any other text when calling a function.`;
                     onUpdate: (chunk: string) => {
                         fullResponse += chunk;
                     },
-                    onFinish: (text: string) => {
-                        resolve(text);
+                    onFinish: () => {
+                        resolve(fullResponse);
                     },
                     onError: (error: string) => {
                         reject(error);
@@ -216,36 +254,33 @@ Do not add any other text when calling a function.`;
             // Check for function call
             const functionCall = parseFunctionCall(response);
 
-            if (functionCall && functionCall.name === 'move_character') {
+            if (functionCall?.name === "move_character") {
                 const { character, location } = functionCall.parameters;
-                addLog(`🔧 Calling: move_character(${character}, ${location})`);
+
+                addLog(`🔧 move_character(${character}, ${location})`);
 
                 const result = executeMoveCharacter(character, location);
                 addLog(`✓ ${result}`);
 
-                // Get natural language response after executing function
-                messages.push({ role: 'assistant', content: response });
-                messages.push({ role: 'tool', content: result, tool_call_id: '0' });
-
-                const finalResponse = await new Promise<string>((resolve, reject) => {
-                    currentGenOptionsRef.current = {
-                        onUpdate: () => { },
-                        onFinish: (text: string) => resolve(text),
-                        onError: (error: string) => reject(error)
-                    };
-
-                    workerRef.current?.postMessage({
-                        type: 'generate',
-                        messages: messages,
-                        options: { temperature: 0.3, maxTokens: 100 }
-                    });
+                // Follow-up LLM turn (optional, purely cosmetic)
+                messages.push({
+                    role: "assistant",
+                    content: response
                 });
 
-                addLog(`🤖 ${finalResponse.trim()}`);
+                messages.push({
+                    role: "tool",
+                    content: result,
+                    tool_call_id: "move_character"
+                });
+
+                // Optional natural language acknowledgement
+                // const finalResponse = await generateFollowup(messages);
+                // addLog(`🤖 ${finalResponse}`);
             } else {
-                // No function call, just show response
                 addLog(`🤖 ${response.trim()}`);
             }
+
         } catch (error) {
             addLog(`❌ Error: ${error}`);
         } finally {
@@ -320,24 +355,27 @@ Do not add any other text when calling a function.`;
     </div>
 }
 
-const Character = ({ character, isSelected, onSelect }: { character: Character, isSelected: boolean, onSelect: () => void }) => {
+const Character = ({ character, isSelected, onSelect }: {
+    character: Character, isSelected: boolean, onSelect: () => void
+}) => {
     return (
         <div
             onClick={onSelect}
-            className={`absolute cursor-pointer transition-all hover:scale-110 ${isSelected ? 'ring-2 ring-indigo-500 rounded-full' : ''}`}
+            className={`absolute cursor-pointer transition-transform duration-500 ease-out hover:scale-110 ${isSelected ? 'ring-2 ring-indigo-500 rounded-full' : ''}`}
             style={{
-                top: character.position.y,
-                left: character.position.x,
-                transform: 'translate(-50%, -50%)'
+                transform: `translate3d(${character.position.x}px, ${character.position.y}px, 0)`
             }}
         >
-            <div className="text-4xl">👩‍✈️</div>
-            <div className="text-xs text-center mt-1 bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800">
-                {character.name}
+            <div className="relative -translate-x-1/2 -translate-y-1/2">
+                <div className="text-4xl">👩‍✈️</div>
+                <div className="text-xs text-center mt-1 bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800">
+                    {character.name}
+                </div>
             </div>
         </div>
     )
 }
+
 
 const Location = ({ location }: { location: Location }) => {
     return (
