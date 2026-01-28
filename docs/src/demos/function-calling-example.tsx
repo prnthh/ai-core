@@ -46,7 +46,7 @@ const systemPrompt = aiCore.buildSystemPromptWithTools(
 // 5. Use generateWithTools for automatic function calling
 async function handleCommand(userCommand: string) {
     await aiCore.initialize();
-    
+
     const messages = [
         { role: 'system' as const, content: systemPrompt },
         { role: 'user' as const, content: userCommand }
@@ -58,7 +58,7 @@ async function handleCommand(userCommand: string) {
             console.log(`🔧 Calling: ${name}`, params);
         },
         onToolResult: (name, result) => {
-            console.log(`✓ Result: ${result}`);
+            console.log(`✓ Result: ${name} ${result}`);
         }
     });
 
@@ -86,7 +86,7 @@ async function manualFunctionCalling() {
 
     // Parse function call
     const functionCall = aiCore.parseFunctionCall(response);
-    
+
     if (functionCall) {
         // Execute tool
         const result = await aiCore.executeTool(
