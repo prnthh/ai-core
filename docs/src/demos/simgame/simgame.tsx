@@ -51,7 +51,7 @@ export default function SimGame() {
     useEffect(() => {
         if (workerRef.current) return;
 
-        const worker = new Worker(new URL('../webLlmWorker.ts', import.meta.url), {
+        const worker = new Worker(new URL('../webLlmWorkerOffline.ts', import.meta.url), {
             type: 'module'
         });
 
